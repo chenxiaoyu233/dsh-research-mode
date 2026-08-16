@@ -77,7 +77,7 @@ export function renderReminder(kind, info) {
     : 'PERIODIC PROMPT RE-READ REQUIRED.'
   if (info.paths.length > 0) {
     const list = info.paths.map((file) => `- ${file}`).join('\n')
-    return `${heading}\nThe authoritative prompt files recorded in ${info.registryFile} are:\n${list}\n\nRead every listed file now with str_replace_editor before doing any other work. Do not trust the compacted summary or your memory: those files are the source of truth. Then verify that the current direction still matches the prompt's exact definitions, quantifiers, and return criteria before continuing.`
+    return `${heading}\nThe authoritative prompt files recorded in ${info.registryFile} are:\n${list}\n\nRead every listed file now before doing any other work. Prefer bash: sed -n '1,200p' <file> (or cat). If you use str_replace_editor, call view with ONLY command and path. Do not trust the compacted summary or your memory: those files are the source of truth. Then verify that the current direction still matches the prompt's exact definitions, quantifiers, and return criteria before continuing.`
   }
   return `${heading}\nNo prompt file is recorded at ${info.registryFile}. Re-read the user's original prompt from the conversation if it is still present. If the prompt was given as a local file, ask the user for its path, record one absolute path per line in ${info.registryFile}, and read the file before continuing.`
 }
