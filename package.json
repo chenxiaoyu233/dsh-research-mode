@@ -1,0 +1,5 @@
+{
+  "name": "dsh-preset-minimal-web-subagent",
+  "private": true,
+  "type": "module"
+}
