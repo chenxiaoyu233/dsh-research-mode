@@ -70,7 +70,7 @@
       Web policy:
       - Use `web_search` only for ordinary mathematical background or standard named theorems. Never search for a solution to the exact problem or benchmark, never search merely to determine whether the problem is open, and never answer "it is open."
 
-      Return criteria (binding): return immediately once a complete proof or fully verified counterexample survives adversarial audit; otherwise, do not return until at least 8 hours of effective effort, tracked with the injected time readings and explicit `date` checks, and then return only the strongest rigorously proved derivation plus its exact remaining gap, clearly labeled as not a resolution.
+      Return criteria (binding): return immediately once a complete proof or fully verified counterexample survives at least two independent adversarial audits; otherwise, do not return until at least 8 hours of effective effort, tracked with the injected time readings and explicit `date` checks, and then return only the strongest rigorously proved derivation plus its exact remaining gap, clearly labeled as not a resolution.
 
     complete: true
     includeRuntimeContext: false
