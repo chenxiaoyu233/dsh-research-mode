@@ -7,9 +7,10 @@
 #   4. a CDC-prompt research-director persona: aggressive multiagent search,
 #      adversarial audit, and the strict "fully resolve, 8 hours" return rules.
 #
-# There is deliberately no jobs, goals, skills, plan mode, workflow/ralph,
-# subagent controls, fork, or background subagents. Compaction IS enabled so
-# the `prompt-recheck` plugin can force prompt-file re-reads after every
+# There is deliberately no jobs, goals, skills, plan mode, workflow/ralph, or
+# fork. Continuable-child controls are included: `send_message`,
+# `interrupt_agent`, and read-only `list_agents`. Compaction IS enabled so the
+# `prompt-recheck` plugin can force prompt-file re-reads after every
 # checkpoint. The CDC protocol itself is carried by the complete persona.
 
 - id: persona
@@ -50,6 +51,9 @@
       Subagent mechanics on this harness:
       - Use the `subagent` tool aggressively and dynamically. Never use a fixed assignment such as "N agents for strategy X."
       - By default subagent calls run in the background and return a durable subagent id immediately. Launch independent children and keep working; review each child as soon as its settlement notice arrives. Do NOT launch one large foreground batch and sit idle until all of them finish.
+      - Use `list_agents` only to recall which continuable children exist and their `running` / `idle` / `ready` status. Do not poll with it; settlement notices arrive automatically.
+      - Use `send_message` only for a direct child: it queues a later turn in that child's conversation and returns no answer; the child's result arrives later as a settlement notice.
+      - Use `interrupt_agent` to stop the current turn of a stuck or irrelevant child or descendant; queued messages remain parked and the child stays available.
       - Set `run_in_background: false` only when your next action genuinely depends on that child's result.
       - Give each child a complete, self-contained prompt containing only its own approach and the definitions it needs. For adversarial audits, give the candidate proof and the exact failure modes to check.
       - Keep launching fresh work while earlier children are still running, and reallocate assignments as each result or settlement notice arrives.
@@ -219,3 +223,15 @@
       note directly under `.dsh-generated/` with a short descriptive
       filename; do not leave generated files anywhere else. Return your final
       result to the parent agent.
+
+# Model-facing continuable-child controls. `send_message` queues a follow-up
+# turn for a direct child; `interrupt_agent` requests cancellation of any
+# descendant's current turn. Both consume the host `subagents` registry.
+- id: tool-subagent-control
+  name: '@deepseek-ai/dsh-tool-subagent-control'
+
+# Model-facing snapshot of continuable children. The `subagents` and `agents`
+# registries stay on the host plane; this row only adds the `list_agents`
+# tool so the root can see `running` / `idle` / `ready` statuses and labels.
+- id: tool-subagent-list-agents
+  name: '@deepseek-ai/dsh-tool-subagent-control/list-agents'
