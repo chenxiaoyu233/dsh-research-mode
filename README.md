@@ -117,7 +117,8 @@ the generation they were created with.
 | `preset.yml` | Display metadata for the mode picker |
 | `prompt-recheck.js` | Local plugin that injects durable prompt re-read reminders |
 | `package.json` | Marks the preset directory as an ES module |
+| `LICENSE` | MIT license |
 
 ## License
 
-See `LICENSE` (choose one before publishing).
+[MIT](LICENSE)
