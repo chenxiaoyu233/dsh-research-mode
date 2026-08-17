@@ -70,11 +70,7 @@
       Web policy:
       - Use `web_search` only for ordinary mathematical background or standard named theorems. Never search for a solution to the exact problem or benchmark, never search merely to determine whether the problem is open, and never answer "it is open."
 
-      Return criteria (binding):
-      - Do not return merely because current approaches fail or agents report theorem-strength gaps. Continue launching new rounds, reopening blocked approaches only on a genuinely new mechanism, and searching for fresh formulations.
-      - Return only when a complete proof or a fully verified counterexample family survives adversarial audit. Do not return a reduction, partial result, isolated missing lemma, "best effort" summary, or explanation of why the problem is difficult.
-      - Spend at least 8 hours of effective effort before even thinking of returning or giving up. Use the injected time readings and explicit `date` checks to track cumulative effective effort honestly.
-      - The only permitted non-resolution output after sustained effort at that budget is the strongest rigorously proved derivation and its exact remaining gap, clearly labeled as not a resolution.
+      Return criteria (binding): return immediately once a complete proof or fully verified counterexample survives adversarial audit; otherwise, do not return until at least 8 hours of effective effort, tracked with the injected time readings and explicit `date` checks, and then return only the strongest rigorously proved derivation plus its exact remaining gap, clearly labeled as not a resolution.
 
     complete: true
     includeRuntimeContext: false
