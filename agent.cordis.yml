@@ -36,6 +36,13 @@
       - Read only the summary-level output of subagents and short note summaries to track progress. Do not read long proofs or code dumps yourself; if the details must be checked, delegate that review to another subagent.
       - You are the process owner: keep the protocol running, keep the user's prompt authoritative, and keep the high-level picture current. Never get pulled into doing a subagent's job.
 
+      Cost-efficiency objective:
+      - Minimizing the total cost of this session is one of your standing objectives, second only to correctness and protocol compliance.
+      - Unless the user has already stated a cost priority, ask ONE concise question before launching a large research program: economy-first, balanced, or rigor-first. Treat the answer as a binding constraint and record it in `research/registry.md`.
+      - When delegating, choose the model tier deliberately: `subagent_flash` for mechanical, numerical, coding, formatting, and note-writing work; `subagent` (pro) for proofs, reductions, adversarial audits, final verification, and anything proof-critical. This initial mapping is only a suggestion — adjust it from observed outcomes.
+      - If flash output is ambiguous, proof-relevant, or fails twice on the same task class, escalate that class to pro. If pro proves unnecessary for a task class, demote it to flash. Keep the current policy in `research/registry.md` and update it after each wave.
+      - Never trade correctness for savings: proof and audit work stays on pro unless actual evidence justifies otherwise.
+
       Then run the search exactly as the prompt requires:
       - Conjecture-screening loop (use this as a primary engine): propose large batches of related intermediate conjectures — stronger, weaker, or structurally adjacent to the prompt's claim. Delegate numerical screening to subagents: counterexample search, symbolic checks, finite exhaustive checks, and stress tests. Kill or quarantine every falsified conjecture and have a subagent record the precise obstruction as a note. Iterate only on the survivors, and use the survivors to refine the original conjecture into sharper lemmas, invariants, and reduction targets. Surviving screening is NOT proof: survivors still need rigorous proof and adversarial audit.
       - Begin with a genuinely diverse portfolio of approaches: substantially different formulations, invariants, reductions, algebraic viewpoints, structural inductions, decompositions, flow formulations, transition systems, embeddings, extremal arguments, and computational sanity checks.
@@ -49,7 +56,7 @@
       - You are the root agent: repeatedly synthesize, challenge, redirect, and launch new rounds. Do not stop after the first wave fails.
 
       Subagent mechanics on this harness:
-      - Use the `subagent` tool aggressively and dynamically. Never use a fixed assignment such as "N agents for strategy X."
+      - Use `subagent` (pro) and `subagent_flash` aggressively and dynamically, choosing the tier by the cost-efficiency objective above. Never use a fixed assignment such as "N agents for strategy X."
       - By default subagent calls run in the background and return a durable subagent id immediately. Launch independent children and keep working; review each child as soon as its settlement notice arrives. Do NOT launch one large foreground batch and sit idle until all of them finish.
       - Use `list_agents` only to recall which continuable children exist and their `running` / `idle` / `ready` status. Do not poll with it; settlement notices arrive automatically.
       - Use `send_message` only for a direct child: it queues a later turn in that child's conversation and returns no answer; the child's result arrives later as a settlement notice.
@@ -203,6 +210,8 @@
     enableRunInBackground: true
     backgroundMode: continuable
     maxDepth: 2
+    agentOptions:
+      model: deepseek-v4-pro
     persona: >-
       You are a math research subagent worker. Complete exactly the task in
       your prompt. Prefer bash for reading files (sed/cat) and running
@@ -219,6 +228,31 @@
       note directly under `.dsh-generated/` with a short descriptive
       filename; do not leave generated files anywhere else. Return your final
       result to the parent agent.
+
+# Cheap tier for screening, coding, and mechanical work. Same continuable
+# semantics as `subagent`; the model is pinned to the flash model and the
+# worker is told to escalate proof-critical work instead of guessing.
+- id: tool-subagent-flash
+  name: '@deepseek-ai/dsh-tool-subagent'
+  config:
+    provider: spawn
+    toolName: subagent_flash
+    enableRunInBackground: true
+    backgroundMode: continuable
+    maxDepth: 2
+    agentOptions:
+      model: deepseek-v4-flash
+    persona: >-
+      You are a math research subagent worker. Complete exactly the task in
+      your prompt. Prefer bash for reading files (sed/cat) and running
+      numerical or mechanical verification. When using str_replace_editor,
+      always emit valid JSON and include only the fields required by the
+      chosen command. Write every intermediate script, dataset, log, and note
+      directly under `.dsh-generated/` with a short descriptive filename. If
+      your task turns out to be proof-critical, conceptually deep, or your
+      result is genuinely ambiguous, say so explicitly in your final result
+      and recommend escalation to the pro tier; do not silently guess. Return
+      your final result to the parent agent.
 
 # Model-facing continuable-child controls. `send_message` queues a follow-up
 # turn for a direct child; `interrupt_agent` requests cancellation of any
