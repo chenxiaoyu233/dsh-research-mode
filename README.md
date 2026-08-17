@@ -8,31 +8,69 @@ protocol, and strict return discipline inspired by the OpenAI CDC prompt.
 
 This is a user-authored preset, not an official DeepSeek product.
 
-## What it is
+## Design
 
-`minimal-web-subagent` is built on top of the shipped `minimal` preset. It
-keeps the minimal core and adds only a few research-oriented capabilities:
+### Root agent: research-loop owner
 
-- `bash` (persistent) and `str_replace_editor`
-- `web_search` (search only, no arbitrary `web_fetch`)
-- one foreground `subagent` tool; child results return to the parent agent
-- automatic time context
-- automatic context compaction
-- a local `prompt-recheck` plugin that forces the root agent to re-read the
-  user's prompt file after every compaction and at regular intervals
+The root agent does not do mathematics, write code, or run experiments itself.
+It only maintains the research loop and enforces the rules:
 
-The persona implements a research-director workflow:
+- Concrete agent scheduling follows the OpenAI CDC prompt: a diverse dynamic
+  portfolio of subagents, an approach-family registry, adversarial audit of
+  every candidate, and a research route built around large-scale numerical
+  counterexample search / conjecture screening.
+- The root repeatedly re-reads the user's prompt, tracks the high-level
+  progress map, proposes batches of intermediate conjectures, and delegates
+  all detailed work.
+- Return discipline: a complete proof or fully verified counterexample that
+  survives two independent adversarial audits is returned immediately.
+  Otherwise the root keeps working for at least 8 hours of effective effort
+  and may then return only the strongest rigorous derivation plus its exact
+  remaining gap, clearly labeled as not a resolution.
+- The root also treats session cost as a standing objective. Unless the user
+  has already stated a cost priority, it asks once (economy-first / balanced /
+  rigor-first) before a large research program.
 
-- The **root agent** owns the process. It remembers the user's prompt,
-  maintains the high-level progress map, proposes large batches of
-  intermediate conjectures, and delegates all detailed work.
-- **Subagents** do the thinking, coding, numerical experiments, and note
-  writing. Depth is capped at 2 so workers can split one bounded level of
-  their own task.
-- Every candidate must pass adversarial audit.
-- The root agent may return only a complete resolution (or, after the
-  8-hour effort budget, the strongest rigorous derivation with its exact
-  remaining gap, clearly labeled as not a resolution).
+### Subagents: flexible model routing
+
+Subagents do the thinking, coding, numerical screening, auditing, and note
+writing. Delegation depth is capped at 2.
+
+- `subagent` — `deepseek-v4-pro`, for proofs, reductions, adversarial audit,
+  final verification, and anything proof-critical.
+- `subagent_flash` — `deepseek-v4-flash`, for numerical/mechanical screening,
+  coding, formatting, and note writing.
+- Both are continuable: calls return a durable subagent id and the parent
+  receives a settlement notice when a child finishes.
+- The initial flash/pro mapping is only a suggestion. The root promotes a task
+  class to pro when flash output is ambiguous, proof-relevant, or fails twice;
+  it demotes a class to flash when pro is repeatedly unnecessary. The current
+  policy lives in `research/registry.md`.
+
+### Tool inventory
+
+Model-facing tools:
+
+| Tool | Purpose |
+|---|---|
+| `bash` | Persistent shell for housekeeping, reading, and verification |
+| `str_replace_editor` | View / create / edit files |
+| `web_search` | Background and standard named theorems only |
+| `subagent` | Continuable pro-tier research worker |
+| `subagent_flash` | Continuable flash-tier cheap worker |
+| `send_message` | Queue a follow-up turn for a direct child |
+| `interrupt_agent` | Stop a stuck child or descendant's current turn |
+| `list_agents` | Snapshot status of children / descendants |
+
+Continuable children also receive the host-provided `report` tool, so they can
+send a child-to-parent message outside the normal settlement path.
+
+Non-tool machinery mounted by the preset:
+
+- `dsh-time-context` — injects current time and browser timezone readings.
+- `dsh-compaction-basic` — automatic and manual context compaction.
+- `prompt-recheck.js` — local plugin that injects a durable reminder to
+  re-read `.dsh-prompt-path` after every compaction and every 30 minutes.
 
 ## Installation
 
@@ -63,7 +101,8 @@ Edit `agent.cordis.yml` to adjust:
 - `time-context`: fallback `timeZone` and refresh interval
 - `prompt-recheck`: `intervalMs` (default `1800000`, 30 minutes) and the
   prompt-path registry filename
-- `tool-subagent`: `maxDepth`, worker persona, and delegation policy
+- `tool-subagent` / `tool-subagent-flash`: model tier, `maxDepth`, worker persona, and delegation policy
+- `tool-subagent-control` / `tool-subagent-list-agents`: follow-up, interrupt, and status tools
 
 Note: DSH detects preset changes from `agent.cordis.yml`. If you edit only
 `prompt-recheck.js`, touch `agent.cordis.yml` (or change a comment) so new
