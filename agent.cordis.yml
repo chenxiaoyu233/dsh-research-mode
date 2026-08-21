@@ -143,8 +143,8 @@
     - id: compaction-basic
       name: '@deepseek-ai/dsh-compaction-basic'
       config:
-        thresholdRatio: 0.45
-        retainRatio: 0.12
+        thresholdRatio: 0.25
+        retainTokens: 60000
         maxTokens: 16384
 
     - id: command-compact

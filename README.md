@@ -12,40 +12,41 @@ This is a user-authored preset, not an official DeepSeek product.
 
 ### Root agent: research-loop owner
 
-The root agent does not do mathematics, write code, or run experiments itself.
-It only maintains the research loop and enforces the rules:
+The root agent thinks actively at the high level — possible routes, strategy,
+and priorities — while delegating tedious calculation, verification, coding,
+and numerical experiments to subagents. It maintains the research loop and
+enforces the rules:
 
 - Concrete agent scheduling follows the OpenAI CDC prompt: a diverse dynamic
   portfolio of subagents, an approach-family registry, adversarial audit of
-  every candidate, and a research route built around large-scale numerical
-  counterexample search / conjecture screening.
+  every candidate, and literature-grounded research before new ideas are
+  invented from scratch.
 - The root repeatedly re-reads the user's prompt, tracks the high-level
   progress map, proposes batches of intermediate conjectures, and delegates
-  all detailed work.
+  detailed work. It normally consumes subagent summaries but may inspect any
+  proof, code, data, or note directly whenever that helps, or ask a subagent
+  for a focused explanation.
+- Numerical experiments are evidence, not truth. A computational result may
+  redirect the search only after independent checks or reproduction; a buggy
+  subagent script must never steer the portfolio.
+- Conjecture screening is a fallback: use it when the loop runs out of
+  genuinely distinct ideas, and treat survivors only as hints for a fresh
+  theoretical direction.
 - Return discipline: a complete proof or fully verified counterexample that
   survives two independent adversarial audits is returned immediately.
   Otherwise the root keeps working for at least 8 hours of effective effort
   and may then return only the strongest rigorous derivation plus its exact
   remaining gap, clearly labeled as not a resolution.
-- The root also treats session cost as a standing objective. Unless the user
-  has already stated a cost priority, it asks once (economy-first / balanced /
-  rigor-first) before a large research program.
 
-### Subagents: flexible model routing
+### Subagents
 
-Subagents do the thinking, coding, numerical screening, auditing, and note
-writing. Delegation depth is capped at 2.
+Subagents do the thinking, coding, careful numerical experiments, auditing,
+and note writing. Delegation depth is capped at 2.
 
 - `subagent` — `deepseek-v4-pro`, for proofs, reductions, adversarial audit,
-  final verification, and anything proof-critical.
-- `subagent_flash` — `deepseek-v4-flash`, for numerical/mechanical screening,
-  coding, formatting, and note writing.
-- Both are continuable: calls return a durable subagent id and the parent
-  receives a settlement notice when a child finishes.
-- The initial flash/pro mapping is only a suggestion. The root promotes a task
-  class to pro when flash output is ambiguous, proof-relevant, or fails twice;
-  it demotes a class to flash when pro is repeatedly unnecessary. The current
-  policy lives in `research/registry.md`.
+  final verification, and everything else the root delegates.
+- Calls are continuable by default: they return a durable subagent id and the
+  parent receives a settlement notice when a child finishes.
 
 ### Tool inventory
 
@@ -55,9 +56,8 @@ Model-facing tools:
 |---|---|
 | `bash` | Persistent shell for housekeeping, reading, and verification |
 | `str_replace_editor` | View / create / edit files |
-| `web_search` | Background and standard named theorems only |
+| `web_search` | Literature grounding; cite sources; verify before use in a proof |
 | `subagent` | Continuable pro-tier research worker |
-| `subagent_flash` | Continuable flash-tier cheap worker |
 | `send_message` | Queue a follow-up turn for a direct child |
 | `interrupt_agent` | Stop a stuck child or descendant's current turn |
 | `list_agents` | Snapshot status of children / descendants |
@@ -70,7 +70,7 @@ Non-tool machinery mounted by the preset:
 - `dsh-time-context` — injects current time and browser timezone readings.
 - `dsh-compaction-basic` — automatic and manual context compaction.
 - `prompt-recheck.js` — local plugin that injects a durable reminder to
-  re-read `.dsh-prompt-path` after every compaction and every 30 minutes.
+  re-read `.dsh-prompt-path` after every compaction and every 20 minutes.
 
 ## Installation
 
@@ -84,6 +84,14 @@ Then refresh the DSH web UI and start a new session with
 **CDC Minimal Research Mode**.
 
 Tested with `@deepseek-ai/dsh` `0.1.0-rc.6`.
+
+### Optional: quieter child reports
+
+The child-side `report` tool is host configuration and cannot be mounted by an
+agent preset. To inject child reports into the parent's next request instead
+of waking/queuing a separate turn, copy the entry from
+`profile-patch.example.yml` into `~/.dsh/profiles/web/cordis.patch.yml`, then
+restart `dsh web`.
 
 ## Usage
 
@@ -99,9 +107,9 @@ Tested with `@deepseek-ai/dsh` `0.1.0-rc.6`.
 Edit `agent.cordis.yml` to adjust:
 
 - `time-context`: fallback `timeZone` and refresh interval
-- `prompt-recheck`: `intervalMs` (default `1800000`, 30 minutes) and the
+- `prompt-recheck`: `intervalMs` (default `1200000`, 20 minutes) and the
   prompt-path registry filename
-- `tool-subagent` / `tool-subagent-flash`: model tier, `maxDepth`, worker persona, and delegation policy
+- `tool-subagent`: model tier, `maxDepth`, worker persona, and delegation policy
 - `tool-subagent-control` / `tool-subagent-list-agents`: follow-up, interrupt, and status tools
 
 Note: DSH detects preset changes from `agent.cordis.yml`. If you edit only
@@ -116,6 +124,7 @@ the generation they were created with.
 | `agent.cordis.yml` | The preset composition |
 | `preset.yml` | Display metadata for the mode picker |
 | `prompt-recheck.js` | Local plugin that injects durable prompt re-read reminders |
+| `profile-patch.example.yml` | Optional host-profile patch for quiet child reports |
 | `package.json` | Marks the preset directory as an ES module |
 | `LICENSE` | MIT license |
 
